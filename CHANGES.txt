@@ -1,0 +1,114 @@
+=======
+CHANGES
+=======
+
+1.3.1 (2009-11-20)
+------------------
+
+- Fixed changed password status message
+
+
+1.3.0 (2009-10-06)
+------------------
+
+- Use 'auth' layout for reset password form
+
+
+1.2.7 (2009-06-22)
+------------------
+
+- Do not use z3c.autoinclude
+
+- Fix misprint in locales
+
+- Remove 'zojax.principal.management' dependency
+
+- Copyright changed to 'Zope Foundation and Contributors'
+
+
+1.2.6 (2008-12-22)
+------------------
+
+- Use new pagelet api
+
+
+1.2.5 (2008-12-13)
+------------------
+
+- Fixed tests for newest zojax.preferences
+
+
+1.2.4 (2008-12-12)
+------------------
+
+- Mark password preference as 'preference.editGroup'
+
+
+1.2.3 (2008-11-24)
+------------------
+
+- Fixed python2.4 compatibility
+
+- Added buildout for testing against zope3.4
+
+
+1.2.2 (2008-10-22)
+------------------
+
+- Update translations
+
+
+1.2.1 (2008-10-17)
+------------------
+
+- Added translations: ru, nl
+
+
+1.2.0 (2008-10-16)
+------------------
+
+- Use new i18n domain
+
+- Update dependencies
+
+
+1.1.0 (2008-08-13)
+------------------
+
+- Moved IPasswordChanger from zojax.authentication
+
+- Test updated
+
+
+1.0.0 (2008-04-23)
+------------------
+
+- Tests updated
+
+- Use zojax.mailtemplate version 1.0.0
+
+
+0.3.0 (2008-04-21)
+------------------
+
+- Added password validation
+
+- Tests added
+
+
+0.2.1 (2008-04-18)
+------------------
+
+- Fix 'change password' preference
+
+
+0.2.0 (2008-04-14)
+------------------
+
+- Use zojax.mailtemplate for generating mails
+
+
+0.1.0 (2008-04-11)
+-----------------
+
+- Initial release

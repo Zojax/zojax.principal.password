@@ -1,0 +1,55 @@
+=======================
+Password Tool Configlet
+=======================
+
+User can change password tool configuration in controlpanel
+http://localhost/settings/principals/password/
+
+  >>> from zope import component
+  >>> from zope.testbrowser.testing import Browser
+
+  >>> actor = Browser()
+  >>> actor.handleErrors = False
+  >>> actor.open("http://localhost/settings/principals/password/")
+  Traceback (most recent call last):
+  ...
+  Unauthorized: settings
+
+  >>> actor = Browser()
+  >>> actor.addHeader("Authorization", "Basic mgr:mgrpw")
+  >>> actor.handleErrors = False
+
+  >>> actor.open("http://localhost/settings/")
+  >>> actor.getLink('Password tool').click()
+
+  >>> actor.getControl(name='form.widgets.passwordManager:list').value
+  ['MD5']
+  >>> actor.getControl(name='form.widgets.passwordChecker:list').value
+  ['default']
+
+  >>> actor.getControl(name='form.widgets.passwordManager:list').value = ['Plain Text']
+  >>> actor.getControl(name='form.buttons.save').click()
+
+  >>> print actor.contents
+  <html>
+  ...Data successfully updated...
+  </html>
+  <BLANKLINE>
+
+  >>> actor.getLink('Password checker').click()
+  >>> actor.getControl(name='form.widgets.min_length').value = '10'
+  >>> actor.getControl(name='form.widgets.letters_digits:list').value = ['true']
+  >>> actor.getControl(name='form.widgets.letters_mixed_case:list').value = ['true']
+  >>> actor.getControl(name='form.buttons.save').click()
+
+  >>> print actor.contents
+  <html>
+  ...Data successfully updated...
+  </html>
+  <BLANKLINE>
+
+  >>> actor.getLink('Password checker').click()
+  >>> actor.getControl(name='form.widgets.min_length').value = '5'
+  >>> actor.getControl(name='form.widgets.letters_digits:list').value = ['false']
+  >>> actor.getControl(name='form.widgets.letters_mixed_case:list').value = ['false']
+  >>> actor.getControl(name='form.buttons.save').click()

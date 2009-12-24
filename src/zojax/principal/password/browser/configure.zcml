@@ -1,0 +1,36 @@
+<configure 
+   xmlns="http://namespaces.zope.org/zope"
+   xmlns:zojax="http://namespaces.zope.org/zojax"
+   i18n_domain="zojax.principal.password">
+
+  <!-- password form validator -->
+  <adapter factory=".validator.PasswordFormValidator" />
+
+  <!-- current password validation -->
+  <adapter factory=".validator.CurrentPasswordValidator" />
+
+  <zojax:pagelet
+     name="index.html"
+     for="..interfaces.IPasswordPreference"
+     class=".password.PrincipalPassword"
+     provides="zojax.preferences.browser.interfaces.IEdit"
+     permission="zojax.ModifyPreference" />
+
+  <!-- reset password -->
+  <zojax:pagelet
+     for="zope.app.component.interfaces.ISite"
+     name="resetpassword.html"
+     class=".resetpassword.ResetPassword"
+     layout="auth"
+     permission="zope.Public" />
+
+  <!-- mail template -->
+  <zojax:mailtemplate
+     for="..interfaces.IPasswordResetingEvent"
+     subject="Password Reset Confirmation"
+     template="resetpasswordmail.pt"
+     class=".resetpasswordmail.ResetPasswordTemplate" />
+
+  <subscriber handler=".resetpasswordmail.resetingPassword" />
+
+</configure>

@@ -1,0 +1,43 @@
+Password Field
+==============
+
+Password field with external validation.
+
+    >>> import zope.interface.verify
+    >>> from zope import interface, component, schema
+    >>> from zojax.principal.password.field import Password
+    >>> from zojax.principal.password.interfaces import IPassword
+
+    >>> zope.interface.verify.verifyClass(IPassword, Password)
+    True
+
+    >>> field = Password()
+    >>> zope.interface.verify.verifyObject(IPassword, field)
+    True
+
+    >>> pw1 = u'password1'
+    >>> pw2 = u'password2'
+
+    >>> field.validate(pw1)
+    >>> field.validate(pw2)
+
+Field uses IPasswordTool to validate password value.
+Let's define password tool:
+
+    >>> from zojax.principal.password import interfaces
+    >>> from zojax.principal.password import passwordtool
+
+    >>> class PasswordTool(passwordtool.PasswordTool):
+    ...     
+    ...     def validatePassword(self, password):
+    ...         if password == pw2:
+    ...             raise schema.ValidationError()
+
+    >>> component.provideUtility(PasswordTool())
+
+    >>> field.validate(pw1)
+
+    >>> field.validate(pw2)
+    Traceback (most recent call last):
+    ...
+    ValidationError

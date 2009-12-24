@@ -1,0 +1,114 @@
+===============
+Change Password
+===============
+
+User can access change password form with following url
+http://localhost/preferences/membership/password/
+
+  >>> from zope import component, interface
+  >>> from zope.testbrowser.testing import Browser
+
+  >>> actor = Browser()
+  >>> actor.handleErrors = False
+  >>> actor.open("http://localhost/preferences/membership/password/")
+  Traceback (most recent call last):
+  ...
+  Unauthorized: preferences
+
+  >>> actor = Browser()
+  >>> actor.addHeader("Authorization", "Basic mgr:mgrpw")
+  >>> actor.handleErrors = False
+
+  >>> actor.open("http://localhost/settings/principals/password/")
+  >>> actor.getControl(name='form.widgets.passwordManager:list').value = [u'Plain Text']
+  >>> actor.getControl(name='form.buttons.save').click()
+
+  >>> actor.open("http://localhost/preferences/")
+  >>> actor.getLink('Change password')
+  Traceback (most recent call last):
+  ...
+  LinkNotFoundError
+
+We should provide IPasswordChanger for principal
+
+  >>> from zope import component, interface
+  >>> from zojax.principal.password.interfaces import IPasswordChanger
+  >>> from zope.app.security.principalregistry import Principal
+
+  >>> class Adapter(object):
+  ...     component.adapts(Principal)
+  ...     interface.implements(IPasswordChanger)
+  ...
+  ...     def __init__(self, principal):
+  ...         self.principal = principal
+  ...         
+  ...     def checkPassword(self, pw):
+  ...         return self.principal._Principal__pw == pw
+  ...
+  ...     def changePassword(self, pw):
+  ...         self.principal._Principal__pw = pw
+
+  >>> component.provideAdapter(Adapter)
+
+  >>> actor.open("http://localhost/preferences/")
+  >>> actor.getLink('Membership preferences').click()
+
+Check current password
+
+  >>> actor.getControl(name='form.widgets.current_password').value = 'wrong_password'
+  >>> actor.getControl(name='form.widgets.password').value = 'mgrpw1'
+  >>> actor.getControl(name='form.widgets.confirm_password').value = 'mgrpw2'
+  >>> actor.getControl(name='form.buttons.4368616e67652070617373776f7264').click()
+
+  >>> print actor.contents
+  <html>
+  ...Does not match current password...
+  </html>
+  <BLANKLINE>
+
+Password and Confirm password
+
+  >>> actor.getControl(name='form.widgets.current_password').value = 'mgrpw'
+  >>> actor.getControl(name='form.widgets.password').value = 'mgrpw1'
+  >>> actor.getControl(name='form.widgets.confirm_password').value = 'mgrpw2'
+  >>> actor.getControl(name='form.buttons.4368616e67652070617373776f7264').click()
+
+  >>> print actor.contents
+  <html>
+  ...Password and Confirm Password should be the same...
+  </html>
+
+  >>> actor.getControl(name='form.widgets.current_password').value = 'mgrpw'
+  >>> actor.getControl(name='form.widgets.password').value = 'mgrpw1'
+  >>> actor.getControl(name='form.widgets.confirm_password').value = 'mgrpw1'
+  >>> actor.getControl(name='form.buttons.4368616e67652070617373776f7264').click()
+
+  >>> print actor.contents
+  <html>
+  ...Password has been changed for Manager...
+  </html>
+
+
+Restore old password
+
+  >>> actor = Browser()
+  >>> actor.addHeader("Authorization", "Basic mgr:mgrpw1")
+  >>> actor.open("http://localhost/preferences/membership/")
+
+  >>> actor.getControl(name='form.widgets.current_password').value = 'mgrpw1'
+  >>> actor.getControl(name='form.widgets.password').value = 'mgrpw'
+  >>> actor.getControl(name='form.widgets.confirm_password').value = 'mgrpw'
+  >>> actor.getControl(name='form.buttons.4368616e67652070617373776f7264').click()
+
+  >>> print actor.contents
+  <html>
+  ...Password has been changed for Manager...
+  </html>
+
+Restore old value
+
+  >>> actor = Browser()
+  >>> actor.addHeader("Authorization", "Basic mgr:mgrpw")
+  >>> actor.open("http://localhost/settings/principals/password/")
+  >>> actor.getControl(name='form.widgets.passwordManager:list').value = [u'MD5']
+  >>> actor.getControl(name='form.buttons.save').click()
