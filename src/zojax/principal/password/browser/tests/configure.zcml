@@ -1,0 +1,9 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+
+  <!-- we need this adapter to allow use dict as request -->
+  <adapter factory=".adapters.DictLoginPassword" />
+  
+  <!-- IPrincipalLogin for zope.app.security Principal -->
+  <adapter factory=".adapters.PrincipalLogin" />
+
+</configure>

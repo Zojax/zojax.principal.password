@@ -1,0 +1,137 @@
+==============
+Reset Password
+==============
+
+Unauthenticated users can reset password. 
+To make reseting work, we should provide IPasswordChanger adapter for
+principal, also we should provide IMailAddress adapter for principal
+
+  >>> from zope.testbrowser.testing import Browser
+
+  >>> actor = Browser()
+  >>> actor.handleErrors = False
+  >>> actor.open("http://localhost/resetpassword.html")
+
+  >>> actor.getControl(name=u'loginid').value = 'user'
+  >>> actor.getControl(name=u'button.send').click()
+
+  >>> u"System can't restore password for this principal." in actor.contents
+  True
+
+We should provide IPrincipalByLogin utility that will return principal
+by its login. And IPasswordChange, IMailAddress adapters for principal.
+
+  >>> from zope import component, interface
+  >>> from zope.app.security.interfaces import IAuthentication
+  >>> from zojax.authentication.interfaces import IPrincipalByLogin
+
+IPrincipalByLogin utility
+
+  >>> class PrincipalByLogin(object):
+  ...     interface.implements(IPrincipalByLogin)
+  ...     def getPrincipalByLogin(self, login):
+  ...         if login == 'user':
+  ...             return component.getUtility(IAuthentication).getPrincipal('zope.user')
+
+  >>> component.provideUtility(PrincipalByLogin(), name='default')
+
+Principal Mail Address
+
+  >>> from zojax.mail.interfaces import IMailAddress
+  >>> from zope.app.security.principalregistry import Principal
+
+  >>> class PrincipalAddress(object):
+  ...     component.adapts(Principal)
+  ...     interface.implements(IMailAddress)
+  ...     def __init__(self, principal):
+  ...         if principal.id == 'zope.user':
+  ...             self.address = 'zope.user@zojax.net'
+
+  >>> component.provideAdapter(PrincipalAddress)
+
+Principal password changer
+
+  >>> from zojax.principal.password.interfaces import IPasswordChanger
+
+  >>> class PrincipalPassword(object):
+  ...     component.adapts(Principal)
+  ...     interface.implements(IPasswordChanger)
+  ...
+  ...     def __init__(self, principal):
+  ...         self.principal = principal
+  ...         
+  ...     def changePassword(self, pw):
+  ...         self.principal._Principal__pw = 'userpw1'
+
+  >>> component.provideAdapter(PrincipalPassword)
+
+We need override IMailDelivery.send to get message
+
+  >>> from zope.sendmail.mailer import SMTPMailer
+  
+  >>> emails = []
+  >>> def send(self, fromaddr, toaddr, message):
+  ...     emails.append((fromaddr, toaddr, message))
+  >>> SMTPMailer.send = send
+
+  >>> actor.getControl(name=u'loginid').value = 'user'
+  >>> actor.getControl(name=u'button.send').click()
+
+We should get email with generated url
+
+  >>> from_addr, to_addr, message = emails[0]
+  >>> from_addr, to_addr
+  (u'Portal administrator <portal@zojax.net>', (u'User <zope.user@zojax.net>',))
+
+  >>> from email import message_from_string
+  >>> message = message_from_string(message)
+
+Let's get generated url
+
+  >>> url = ''
+
+  >>> msg = message.get_payload(decode=1)
+  >>> for line in msg.split():
+  ...     if line.startswith('http://localhost/resetpassword.html/'):
+  ...         url = line
+  ...         break
+
+Now we can complete password reseting
+
+  >>> actor.open(url)
+  >>> actor.getControl(name='form.widgets.password').value = 'pw1'
+  >>> actor.getControl(name='form.widgets.confirm_password').value = 'pw2'
+  >>> actor.getControl(name='form.buttons.4368616e67652070617373776f7264').click()
+
+  >>> print actor.contents
+  <html>
+  ...Password should be at least 5 characters...
+  </html>
+
+  >>> actor.open(url)
+  >>> actor.getControl(name='form.widgets.password').value = 'userpw1'
+  >>> actor.getControl(name='form.widgets.confirm_password').value = 'userpw2'
+  >>> actor.getControl(name='form.buttons.4368616e67652070617373776f7264').click()
+
+  >>> print actor.contents
+  <html>
+  ...Password and Confirm Password should be the same...
+  </html>
+
+  >>> actor.open(url)
+  >>> actor.getControl(name='form.widgets.password').value = 'userpw1'
+  >>> actor.getControl(name='form.widgets.confirm_password').value = 'userpw1'
+  >>> actor.getControl(name='form.buttons.4368616e67652070617373776f7264').click()
+
+After reset passcode should be removed.
+
+  >>> actor.open(url)
+  >>> print actor.contents
+  <html>
+  ...Passcode is invalid...
+  </html>
+
+  >>> actor = Browser()
+  >>> actor.addHeader("Authorization", "Basic user:userpw1")
+  >>> actor.open("http://localhost/")
+
